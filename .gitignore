@@ -26,3 +26,6 @@ weights/
 *.safetensors
 *.ckpt
 *.bin
+
+# Browser partial downloads (must never be committed)
+*.crdownload

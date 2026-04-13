@@ -18,3 +18,11 @@ Thumbs.db
 # Image files
 images/
 annotations/
+
+# AI 모델 가중치 (로컬 전용, 용량 큼)
+weights/
+*.pt
+*.pth
+*.safetensors
+*.ckpt
+*.bin

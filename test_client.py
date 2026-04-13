@@ -12,3 +12,6 @@ payload = {
 
 print("서버로 가상 피팅 요청을 보냅니다... (1~2분 대기)")
 response = requests.post(url, json=payload)
+
+print("응답 상태 코드:", response.status_code)
+print("결과 데이터:", response.json())

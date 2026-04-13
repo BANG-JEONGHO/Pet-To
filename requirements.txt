@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+google-cloud-aiplatform
+diffusers
+transformers
+accelerate
+torch
+torchvision
+opencv-python-headless
+pillow
+pydantic
+firebase-admin
+google-cloud-storage
+segment-anything @ git+https://github.com/facebookresearch/segment-anything.git
+huggingface-hub

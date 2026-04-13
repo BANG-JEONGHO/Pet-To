@@ -1,0 +1,9 @@
+pet-images/
+.vscode/
+*.pdf
+*.crdownload
+download_*.py
+yolov8n.pt
+weights/IP-Adapter/.cache/
+__pycache__/
+.git/

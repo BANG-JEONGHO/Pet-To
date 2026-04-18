@@ -13,3 +13,4 @@ firebase-admin
 google-cloud-storage
 segment-anything @ git+https://github.com/facebookresearch/segment-anything.git
 huggingface-hub
+ultralytics

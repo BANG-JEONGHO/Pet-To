@@ -2,9 +2,8 @@ import cv2
 import numpy as np
 import torch
 import io
-import base64
-from google.cloud import aiplatform
 from segment_anything import sam_model_registry, SamPredictor
+from ultralytics import YOLO
 from diffusers import StableDiffusionControlNetInpaintPipeline, ControlNetModel
 from PIL import Image
 
@@ -46,48 +45,61 @@ class PetVTONPipeline:
         # 안전 필터 해제 (필요시)
         self.diffusion_pipe.safety_checker = None
 
-        # 3. GCP AutoML (Vertex AI) 초기화
-        aiplatform.init(project="knu-2026-bangjeongho833", location="us-central1")
-        self.automl_endpoint = aiplatform.Endpoint("88190178396471296")
+        # 3. YOLO 로컬 detector 로드
+        self.yolo_model = YOLO("./weights/yolov8n.pt")
         self.bbox_padding_ratio = 0.08
+        self.min_confidence = 0.25
         
         print("✅ 모든 AI 모델 로딩 완료!")
 
     def _get_bounding_box(self, pet_img_bytes: bytes, image_hw: tuple[int, int]) -> np.ndarray:
-        """AutoML을 호출하여 강아지/고양이의 바운딩 박스를 가져옵니다."""
+        """YOLO로 강아지/고양이의 바운딩 박스를 가져옵니다."""
         H, W = image_hw
 
-        encoded = base64.b64encode(pet_img_bytes).decode('utf-8')
-        instances = [{"content": encoded}]
-
-        response = self.automl_endpoint.predict(instances=instances)
-        preds = response.predictions
-
-        if not preds or not preds[0].get("bboxes"):
+        img_bgr = cv2.imdecode(np.frombuffer(pet_img_bytes, np.uint8), cv2.IMREAD_COLOR)
+        if img_bgr is None:
             return np.array([0, 0, W - 1, H - 1], dtype=int)
-        
-        pred = preds[0]
-        bboxes = pred["bboxes"]
-        confidences = pred.get("confidences", [1.0] * len(bboxes))
 
-        best_idx = int(np.argmax(confidences))
-        x_min_n, x_max_n, y_min_n, y_max_n = bboxes[best_idx]
-        
-        x_min = x_min_n * W
-        x_max = x_max_n * W
-        y_min = y_min_n * H
-        y_max = y_max_n * H
-        
-        bw = x_max - x_min
-        bh = y_max - y_min
+        results = self.yolo_model.predict(
+            source=img_bgr,
+            conf=self.min_confidence,
+            verbose=False,
+        )
+        if not results:
+            return np.array([0, 0, W - 1, H - 1], dtype=int)
+
+        boxes = results[0].boxes
+        if boxes is None or len(boxes) == 0:
+            return np.array([0, 0, W - 1, H - 1], dtype=int)
+
+        # COCO 기준: cat=15, dog=16 (커스텀 모델이면 클래스 인덱스에 맞게 변경)
+        target_classes = {15, 16}
+
+        best = None
+        best_conf = -1.0
+        for b in boxes:
+            cls_id = int(b.cls[0].item())
+            conf = float(b.conf[0].item())
+            if cls_id in target_classes and conf > best_conf:
+                best = b
+                best_conf = conf
+
+        if best is None:
+            confs = boxes.conf.cpu().numpy()
+            best = boxes[int(np.argmax(confs))]
+
+        x1, y1, x2, y2 = best.xyxy[0].cpu().numpy().tolist()
+
+        bw = x2 - x1
+        bh = y2 - y1
         px = bw * self.bbox_padding_ratio
         py = bh * self.bbox_padding_ratio
-        
-        x_min = max(0, int(x_min - px))
-        y_min = max(0, int(y_min - py))
-        x_max = min(W - 1, int(x_max + px))
-        y_max = min(H - 1, int(y_max + py))
-        
+
+        x_min = max(0, int(x1 - px))
+        y_min = max(0, int(y1 - py))
+        x_max = min(W - 1, int(x2 + px))
+        y_max = min(H - 1, int(y2 + py))
+
         return np.array([x_min, y_min, x_max, y_max], dtype=int)
 
     def _make_inpaint_condition(self, image_pil: Image.Image, mask_pil: Image.Image) -> torch.Tensor:
@@ -102,7 +114,7 @@ class PetVTONPipeline:
         pet_img_np = cv2.imdecode(np.frombuffer(pet_img_bytes, np.uint8), cv2.IMREAD_COLOR)
         pet_img_rgb = cv2.cvtColor(pet_img_np, cv2.COLOR_BGR2RGB)
         
-        # [STEP 1] AutoML: 위치 감지
+        # [STEP 1] YOLO: 위치 감지
         h, w = pet_img_rgb.shape[:2]
         bbox = self._get_bounding_box(pet_img_bytes, (h, w))
 

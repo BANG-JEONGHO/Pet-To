@@ -4,7 +4,7 @@ import torch
 import io
 from google.cloud import aiplatform
 from segment_anything import sam_model_registry, SamPredictor
-from diffusers import StableDiffusionInpaintPipeline
+from diffusers import StableDiffusionInpaintPipeline,
 from PIL import Image
 
 class PetVTONPipeline:
@@ -19,6 +19,7 @@ class PetVTONPipeline:
         self.sam_predictor = SamPredictor(sam)
 
         # 2. Diffusion 모델 로드 (로컬 폴더에서 오프라인 모드로)
+        
         self.diffusion_pipe = StableDiffusionInpaintPipeline.from_pretrained(
             "./weights/sd-inpainting-model",
             local_files_only=True,

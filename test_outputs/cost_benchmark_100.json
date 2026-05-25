@@ -1,0 +1,54 @@
+{
+  "benchmark_type": "simulation",
+  "num_images": 100,
+  "assumptions": {
+    "nanobanana_cost_per_image_edit": 0.02,
+    "avg_full_nanobanana_calls_per_tryon": 2.1,
+    "avg_local_pipeline_calls_per_tryon": 0.4,
+    "local_gpu_cost_per_inference": 0.01,
+    "quality_gate_distribution": {
+      "SKIP_ratio": 0.5,
+      "SKIP_description": "IDM-VTON 결과 품질 충분 → API 0회",
+      "REFINE_ratio": 0.4,
+      "REFINE_description": "보정 필요 → API 1회 (마스크 기반 스마트 프롬프트)",
+      "REJECT_ratio": 0.1,
+      "REJECT_description": "입력 불량 → API 차단 0회 (헛돈 방지)"
+    },
+    "nanobanana_only_retry_reason": "마스크/포즈 정보 없이 범용 프롬프트 → 위치 오류(얼굴/꼬리에 옷) 70% 확률 재시도 + 텍스처 보정 40% 확률 재시도 → 평균 2.1회"
+  },
+  "scenarios": {
+    "A_full_nanobanana": {
+      "scenario": "A. 순수 NanoBanana (로컬 전처리 없음)",
+      "num_images": 100,
+      "total_api_calls": 210,
+      "total_nanobanana_cost": 4.2,
+      "local_compute_cost": 0.0,
+      "total_cost": 4.2,
+      "cost_per_image": 0.042
+    },
+    "B_local_plus_refine": {
+      "scenario": "B. 로컬 파이프라인 + NanoBanana 후처리",
+      "num_images": 100,
+      "total_api_calls": 40,
+      "total_nanobanana_cost": 0.8,
+      "local_compute_cost": 1.0,
+      "total_cost": 1.8,
+      "cost_per_image": 0.018
+    },
+    "C_local_only": {
+      "scenario": "C. 로컬 파이프라인만 (NanoBanana 없음, 참고용)",
+      "num_images": 100,
+      "total_api_calls": 0,
+      "total_nanobanana_cost": 0.0,
+      "local_compute_cost": 1.0,
+      "total_cost": 1.0,
+      "cost_per_image": 0.01
+    }
+  },
+  "comparison_A_vs_B": {
+    "api_call_reduction": 170,
+    "api_call_reduction_pct": 81.0,
+    "cost_saving_usd": 2.4,
+    "cost_saving_pct": 57.1
+  }
+}

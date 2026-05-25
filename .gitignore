@@ -1,0 +1,5 @@
+# Deep Learning Models & Checkpoints
+*.safetensors
+*.pth
+output_pet_vton_delta_101/
+checkpoints/

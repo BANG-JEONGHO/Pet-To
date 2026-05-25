@@ -1,0 +1,21 @@
+{
+  "annotations": [
+    {
+      "file_name": "sample.jpg",
+      "tag_info": [
+        {
+          "tag_name": "sleeveLength",
+          "tag_category": "short sleeve"
+        },
+        {
+          "tag_name": "neckLine",
+          "tag_category": "round neck"
+        },
+        {
+          "tag_name": "item",
+          "tag_category": "pet sweater"
+        }
+      ]
+    }
+  ]
+}

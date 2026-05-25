@@ -1,0 +1,6 @@
+{
+    "cmake.configureOnOpen": false,
+    "cmake.configureOnEdit": false,
+    "cmake.automaticReconfigure": false,
+    "cmake.ignoreCMakeListsMissing": true
+}
